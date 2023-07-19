@@ -33,7 +33,7 @@ class Diamant:
     current_tunnel: list = []
     traps_encountered: list = []
     traps_discarded: list = []
-    current_cavern: Cavern = None
+    current_cavern: Cavern
 
     def __init__(self, players: int):
         self.players = players
@@ -84,12 +84,14 @@ class Diamant:
         self.current_cavern = cavern
         if cavern.trap != "":
             self.traps_encountered.append(cavern.trap)
+            # If we would die
             if len(self.traps_encountered) != len(set(self.traps_encountered)):
-                self.start_new_round()
-                return True
+                self.traps_discarded.append(cavern.trap)  # Store this "death" card
+                self.start_new_round()  # Reset values
+                return True  # State that we have died
         # We only add the cavern to the tunnel if it would not have killed us
         # This means it gets "purged" from the game
-        self.current_tunnel.append(cavern)
+        self.current_tunnel.append(cavern)  # If we have not died, we want to add that cavern to the tunnel
         return False
 
     def start_new_round(self):
