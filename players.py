@@ -2,12 +2,14 @@ import random
 import math
 
 
-class TestPlayer:
+class BasePlayer:
     """Base class"""
 
     name: str = ""
     held_rubies: int = 0
     banked_rubies: int = 0
+    returning: bool = False
+    passive: bool = False
 
     def __init__(self, name: str):
         self.name = name
@@ -23,8 +25,17 @@ class TestPlayer:
         self.banked_rubies += self.held_rubies
         self.held_rubies = 0
 
+    def new_round(self):
+        self.held_rubies = 0
+        self.returning = False
+        self.passive = False
 
-class RandomPlayer(TestPlayer):
+    def new_game(self):
+        self.new_round()
+        self.banked_rubies = 0
+
+
+class RandomPlayer(BasePlayer):
     """Returns randomly 1 out of every 10 times."""
 
     def __init__(self):
@@ -34,7 +45,7 @@ class RandomPlayer(TestPlayer):
         return False if random.randint(0, 9) == 0 else True
 
 
-class EstimatedRubiesPlayer(TestPlayer):
+class EstimatedRubiesPlayer(BasePlayer):
     """Returns if it thinks it can get the target amount of rubies."""
 
     def __init__(self, target_rubies: int):
