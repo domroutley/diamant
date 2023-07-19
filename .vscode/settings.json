@@ -1,0 +1,12 @@
+{
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+},
+"python.formatting.blackArgs": ["--line-length", "120"],
+"python.formatting.provider": "black"
+}
