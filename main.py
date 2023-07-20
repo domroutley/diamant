@@ -1,5 +1,6 @@
 import diamant
 import players as playerclasses
+import numpy
 
 
 def game_loop(players: list) -> list:
@@ -29,18 +30,28 @@ if __name__ == "__main__":
 
     ]
 
-    number_of_runs = 1000
+    number_of_runs = 1001
 
     player_scores = {}
     for player in players:
-        player_scores[player.name] = {"mean": 0, "median": 0, "range": 0, "scores": []}
+        player_scores[player.name] = {"mean": 0, "median": 0, "standard_deviation": 0, "range": 0, "scores": []}
 
     for game_run in range(number_of_runs):
         players = game_loop(players=players)
         for player in players:
             player_scores[player.name]["scores"].append(player.banked_rubies)
-            player.new_game()
 
-    for player in players:  # Average results out
-        player_scores[player.name]["mean"] = sum(player_scores[player.name]["scores"]) / number_of_runs
+    for player in players:
+        print()
+        player_scores[player.name]["mean"] = numpy.mean(player_scores[player.name]["scores"])
         print(f"{player.name} has a mean of {player_scores[player.name]['mean']}")
+
+        player_scores[player.name]["median"] = numpy.median(player_scores[player.name]["scores"])
+        print(f"{player.name} has a median of {player_scores[player.name]['median']}")
+
+        player_scores[player.name]["standard_deviation"] = numpy.std(player_scores[player.name]["scores"])
+        print(f"{player.name} has a standard deviation of {player_scores[player.name]['standard_deviation']}")
+
+        sorted_scores = sorted(player_scores[player.name]["scores"])
+        player_scores[player.name]["range"] = sorted_scores[-1] - sorted_scores[0]
+        print(f"{player.name} has a range of {player_scores[player.name]['range']}")

@@ -71,6 +71,8 @@ class Diamant:
         self.traps_encountered = []
         self.traps_discarded = []
         self.players = players
+        for player in self.players: # Initilise players
+            player.new_game()
 
     def get_game_state(self):
         return {
