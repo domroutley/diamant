@@ -1,60 +1,50 @@
 import random
+import math
+import players as playerclasses
 
 
 class Cavern:
-    trap: str = ""
-    __original_rubies = 0
-    rubies: int = 0
-    relic: bool = False
-
-    def __init__(self, rubies: int = 0, relic: bool = False, trap: str = ""):
-        self.trap = trap
+    def __init__(self, rubies: int, relic: bool = False):
         self.rubies = rubies
         self.__original_rubies = rubies
         self.relic = relic
+        self.in_tunnel = False
+        self.is_trap = False
 
-    def reset_rubies(self):
+    def reset(self):
         self.rubies = self.__original_rubies
+        self.in_tunnel = False
 
     def reduce_rubies(self, take: int):
         self.rubies -= take
 
-    def __str__(self) -> str:
-        if self.trap == "":
-            return f"{self.__original_rubies} rubies cavern"
-        else:
-            return f"{self.trap} cavern"
+
+class Trap(Cavern):
+    def __init__(self, name: str):
+        super().__init__(0) # Sets up standard values
+        self.name = name
+        self.is_trap = True
 
 
 class Diamant:
-    __original_players: int = -1
-    players: int = -1
-    caverns: list = []
-    current_tunnel: list = []
-    traps_encountered: list = []
-    traps_discarded: list = []
-    current_cavern: Cavern
-
-    def __init__(self, players: int):
-        self.players = players
-        self.__original_players = players
+    def __init__(self, players:list):
         # Start by shuffling the deck
         self.caverns = [
-            Cavern(trap="snek"),
-            Cavern(trap="snek"),
-            Cavern(trap="snek"),
-            Cavern(trap="chomper"),
-            Cavern(trap="chomper"),
-            Cavern(trap="chomper"),
-            Cavern(trap="spleider"),
-            Cavern(trap="spleider"),
-            Cavern(trap="spleider"),
-            Cavern(trap="squish"),
-            Cavern(trap="squish"),
-            Cavern(trap="squish"),
-            Cavern(trap="lava"),
-            Cavern(trap="lava"),
-            Cavern(trap="lava"),
+            Trap("snek"),
+            Trap("snek"),
+            Trap("snek"),
+            Trap("chomper"),
+            Trap("chomper"),
+            Trap("chomper"),
+            Trap("spleider"),
+            Trap("spleider"),
+            Trap("spleider"),
+            Trap("squish"),
+            Trap("squish"),
+            Trap("squish"),
+            Trap("lava"),
+            Trap("lava"),
+            Trap("lava"),
             Cavern(1),
             Cavern(2),
             Cavern(3),
@@ -78,36 +68,80 @@ class Diamant:
             # Cavern(12, True),
         ]
         random.shuffle(self.caverns)
-
-    def select_card(self):
-        cavern = self.caverns.pop()
-        self.current_cavern = cavern
-        if cavern.trap != "":
-            self.traps_encountered.append(cavern.trap)
-            # If we would die
-            if len(self.traps_encountered) != len(set(self.traps_encountered)):
-                self.traps_discarded.append(cavern.trap)  # Store this "death" card
-                self.start_new_round()  # Reset values
-                return True  # State that we have died
-        # We only add the cavern to the tunnel if it would not have killed us
-        # This means it gets "purged" from the game
-        self.current_tunnel.append(cavern)  # If we have not died, we want to add that cavern to the tunnel
-        return False
-
-    def start_new_round(self):
-        # Reset values
-        for cavern in self.current_tunnel:
-            cavern.reset_rubies()  # Reset rubies
-            self.caverns.append(cavern)  # Add back to deck
-        self.current_tunnel = []  # Reset current tunnel
-        self.traps_encountered = []  # Reset what traps would kill us
-        random.shuffle(self.caverns)  # Shuffle
-        self.players = int(self.__original_players)
+        self.traps_encountered = []
+        self.traps_discarded = []
+        self.players = players
 
     def get_game_state(self):
         return {
-            "current_tunnel": self.current_tunnel,
-            "players_remaining": self.players,
+            "tunnel": list(self.caverns[0:self.current_cavern_index]),
             "traps_encountered": self.traps_encountered,
-            "traps_discarded": self.traps_discarded,
+            "traps_discarded": self.traps_discarded
         }
+
+    def extend_tunnel(self) -> bool:
+        # pick a cavern
+        # this just sets the _next_ cavern as in the tunnel
+        for index, cavern in enumerate(self.caverns):
+            if not cavern.in_tunnel: # The next card
+                cavern.in_tunnel = True
+                self.current_cavern_index = index
+                # is this a trap card, if so do we die?
+                if cavern.is_trap:
+                    if cavern.name in self.traps_encountered:
+                        self.traps_discarded.append(cavern.name) # Can be used by players to calculate risk
+                        self.caverns.pop(index) # Remove cavern from circulation
+                        return False
+                    else:
+                        self.traps_encountered.append(cavern.name)
+                else: # Give players rubies
+                    rubies_to_give = math.floor(cavern.rubies / self.how_many_players_playing())
+                    for player in self.players:
+                        if not player.passive:
+                            player.give_rubies(rubies_to_give)
+                            cavern.reduce_rubies(rubies_to_give)
+                    # Notify players of state, and share out rubies if they leave
+                    self.__escort_players_home()
+                break # Stop selecting cavern "cards"
+        return True
+
+    def start_new_round(self):
+        # Reset values
+        for cavern in self.caverns:
+            cavern.reset()  # Reset cavern status
+        self.traps_encountered = []  # Reset what traps would kill us
+        self.current_cavern_index = 0 # reset current cavern index
+        random.shuffle(self.caverns)  # Shuffle cavern "cards"
+        # Reset all player status
+        for player in self.players:
+            player.new_round()
+
+    def how_many_players_playing(self) -> int:
+        players_playing = len(self.players)
+        for player in self.players:
+            if player.passive:
+                players_playing -= 1
+        return players_playing
+
+    def __query_players(self):
+        are_any_returning = False
+        for player in self.players:
+            if not player.are_you_staying(self.get_game_state()):
+                player.returning = True
+                are_any_returning = True
+        return are_any_returning
+
+    def __escort_players_home(self):
+        if self.__query_players():
+            for cavern in self.caverns:
+                if cavern.in_tunnel and cavern.rubies > 0:
+                    rubies_to_give = math.floor(cavern.rubies / self.how_many_players_playing())
+                    for player in self.players:
+                        if not player.passive and player.returning: # NOTE, not set as passive until after they have returned
+                            player.give_rubies(rubies_to_give)
+                            cavern.reduce_rubies(rubies_to_give)
+
+            # tell all players trying to return that they have done so
+            for player in self.players:
+                if player.returning:
+                    player.gone_home()

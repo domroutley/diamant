@@ -1,82 +1,22 @@
 import diamant
 import players as playerclasses
-import math
-import csv
 
 
 def game_loop(players: list) -> list:
-    game = diamant.Diamant(players=len(players))
+    game = diamant.Diamant(players)
     for round_index in range(1, 6):
         # print(f"\n=========\nRound {round_index}\n=========")
-        # Reset all player status
-        for player in players:
-            player.new_round()
         while True: # Select cards until something breaks
             # Select a new card, break if we have "died"
-            round_over = game.select_card()  # Returns true if the round is over
-            # print(f"\nCard is a {game.current_cavern}.")
-            if round_over:
-                # print("Ending round, we have been trapped!")
-                break
-            else:
-                game_state = game.get_game_state()
-
-            # Get how many players are still playing
-            players_playing = len(players)
-            for player in players:
-                if player.passive:
-                    players_playing -= 1
-
-            # Give players rubies if required
-            rubies_to_give = math.floor(game.current_tunnel[-1].rubies / players_playing)
-            # print(f"Each player gets {rubies_to_give} rubies.")
-            for player in players:
-                if not player.passive:
-                    player.give_rubies(rubies_to_give)
-            game.current_tunnel[-1].reduce_rubies(players_playing * rubies_to_give)  # Reduce ruby amount
-
-            # Notify all players of state, are they continuing?
-            players_returning = 0
-            for player in players:
-                if not player.are_you_staying(game_state):
-                    player.returning = True # TODO, could the player just set this themselves?
-                    players_returning += 1
-
-            # For players leaving, give them gems, remove gems from caverns that need to
-            if players_returning > 0:
-                for cavern in game.current_tunnel:
-                    if cavern.rubies > 0:
-                        rubies_to_give = math.floor(cavern.rubies / players_returning)
-                        for player in players:
-                            if player.returning:
-                                player.give_rubies(rubies_to_give) # Give rubies to player
-                                cavern.reduce_rubies(rubies_to_give) # Reduce ruby amount in cavern
-                                player.bank() # Tell player to bank rubies
-
-            # Tell players returning that they are now passive
-            players_playing = len(players)
-            for player in players:
-                if player.returning:
-                    player.passive = True
-                    player.returning = False
-                    players_playing -= 1
-                elif player.passive:
-                    players_playing -= 1
-                else: # They are still playing
-                    pass
-
-            # End round if no one is left playing
-            if players_playing <= 0:
-                # print("There are no more players remaining, ending round.")
+            try_to_extend = game.extend_tunnel()  # Returns false if the round is over, the tunnel could not be extended
+            if not try_to_extend: # we have been trapped
                 game.start_new_round()
                 break
 
-    # print("\n")
-    # print("Final scores")
-    # for player in players:
-    #     # print(f"{player.name} had {player.banked_rubies}")
-    #     results[player.name] = player.banked_rubies
-    #     player.banked_rubies = 0  # Make sure the player doesnt have any rubies held over between games
+            # End round if no one is left playing
+            if game.how_many_players_playing() <= 0:
+                game.start_new_round()
+                break
     return players
 
 
@@ -86,6 +26,7 @@ if __name__ == "__main__":
         playerclasses.EstimatedRubiesPlayer(6),
         playerclasses.EstimatedRubiesPlayer(10),
         playerclasses.EstimatedRubiesPlayer(20),
+
     ]
 
     number_of_runs = 1000

@@ -4,15 +4,12 @@ import math
 
 class BasePlayer:
     """Base class"""
-
-    name: str = ""
-    held_rubies: int = 0
-    banked_rubies: int = 0
-    returning: bool = False
-    passive: bool = False
-
     def __init__(self, name: str):
-        self.name = name
+        self.name:str = name
+        self.held_rubies: int = 0
+        self.banked_rubies: int = 0
+        self.returning: bool = False
+        self.passive: bool = False
 
     def are_you_staying(self, game_state):
         # base class
@@ -21,9 +18,11 @@ class BasePlayer:
     def give_rubies(self, rubies):
         self.held_rubies += rubies
 
-    def bank(self):
+    def gone_home(self):
         self.banked_rubies += self.held_rubies
         self.held_rubies = 0
+        self.returning = False
+        self.passive = True
 
     def new_round(self):
         self.held_rubies = 0
@@ -56,7 +55,7 @@ class EstimatedRubiesPlayer(BasePlayer):
         if self.held_rubies >= self.target_rubies:  # We just have the amount in hand
             return False
         rubies_remaining = 0
-        for cavern in game_state["current_tunnel"]:
+        for cavern in game_state["tunnel"]:
             rubies_remaining += cavern.rubies
         # When adding half the remaining rubies to the amount in hand
         if (self.held_rubies + (math.floor(rubies_remaining / 2))) >= self.target_rubies:
