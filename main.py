@@ -23,14 +23,14 @@ def game_loop(players: list) -> list:
 
 if __name__ == "__main__":
     players = [
-        playerclasses.RandomPlayer(),
+        playerclasses.RandomPlayer("RandomPlayer"),
         playerclasses.EstimatedRubiesPlayer(6),
         playerclasses.EstimatedRubiesPlayer(10),
         playerclasses.EstimatedRubiesPlayer(20),
 
     ]
 
-    number_of_runs = 1001
+    number_of_runs = 1000
 
     player_scores = {}
     for player in players:

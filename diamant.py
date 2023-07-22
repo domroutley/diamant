@@ -73,12 +73,19 @@ class Diamant:
         self.players = players
         for player in self.players: # Initilise players
             player.new_game()
+        self._trap_types = set([])
+        for cavern in self.caverns:
+            if cavern.is_trap:
+                self._trap_types.add(cavern.name)
 
     def get_game_state(self):
         return {
             "tunnel": list(self.caverns[0:self.current_cavern_index]),
             "traps_encountered": self.traps_encountered,
-            "traps_discarded": self.traps_discarded
+            "traps_discarded": self.traps_discarded,
+            "players_playing": self.how_many_players_playing(),
+            "total_caverns": len(self.caverns),
+            "trap_types": self._trap_types
         }
 
     def extend_tunnel(self) -> bool:
