@@ -6,8 +6,6 @@
     "files.trimFinalNewlines": true,
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
-},
-"python.formatting.blackArgs": ["--line-length", "120", "--"],
-"python.formatting.provider": "black",
-"python.analysis.typeCheckingMode": "basic"
+  },
+  "python.analysis.typeCheckingMode": "basic"
 }
